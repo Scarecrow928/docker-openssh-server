@@ -7,6 +7,6 @@ RUN pacman -Syu --noconfirm --needed \
     openssh && \
     pacman -Scc --noconfirm
 
-COPY entrypoint.sh /entrypoint.sh
+COPY init.sh /init.sh
 
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["bash", "-c", "/init.sh"]

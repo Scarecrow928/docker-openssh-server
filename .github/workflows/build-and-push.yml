@@ -3,7 +3,7 @@ on: [push]
 
 env:
   IMAGE_NAME: scarecrow928/openssh-server
-  IMAGE_TAG: arch-minimal
+  IMAGE_TAG: debian
 
 jobs:
   build-and-push:

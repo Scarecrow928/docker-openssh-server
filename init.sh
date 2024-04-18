@@ -27,4 +27,5 @@ fi
 
 # Start sshd
 echo "Start sshd"
+mkdir -p /run/sshd
 exec /usr/sbin/sshd -D

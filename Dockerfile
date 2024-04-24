@@ -12,8 +12,11 @@ RUN apt-get update && \
     ca-certificates \
     curl \
     vim && \
-    apt-get clean
+    apt-get clean && \
+    rm -f /etc/ssh/ssh_host_*
 
 COPY init.sh /init.sh
 
 ENTRYPOINT ["bash", "-c", "/init.sh"]
+
+CMD [ "/usr/sbin/sshd", "-D" ]

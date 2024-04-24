@@ -25,7 +25,4 @@ else
     sed -i -E "s/[[:space:]]*#?[[:space:]]*PasswordAuthentication[[:space:]]*[[:alpha:]]+[[:space:]]*/PasswordAuthentication no/g" /etc/ssh/sshd_config
 fi
 
-# Start sshd
-echo "Start sshd"
 mkdir -p /run/sshd
-exec /usr/sbin/sshd -D

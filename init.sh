@@ -26,3 +26,5 @@ else
 fi
 
 mkdir -p /run/sshd
+
+exec "$@"

@@ -1,4 +1,6 @@
-#/bin/bash
+#!/bin/bash
+
+set -e
 
 # If sshd host keys doesn't exist, create them
 if [ ! -f "/etc/ssh/ssh_host_rsa_key" ] || \

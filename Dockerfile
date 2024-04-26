@@ -17,6 +17,6 @@ RUN apt-get update && \
 
 COPY init.sh /init.sh
 
-ENTRYPOINT ["bash", "-c", "/init.sh"]
+ENTRYPOINT ["/init.sh"]
 
 CMD [ "/usr/sbin/sshd", "-D" ]

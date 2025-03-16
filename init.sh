@@ -1,32 +1,53 @@
 #!/bin/bash
 
-set -e
+# Default values for environment variables
+PUID=${PUID:-1000}
+PGID=${PGID:-1000}
+USER_NAME=${USER_NAME:-user}
+USER_PASSWORD=${USER_PASSWORD:-password123}
+SSHD_PORT=${SSHD_PORT:-2222}
+TZ=${TZ:-UTC}
 
-# If sshd host keys doesn't exist, create them
-if [ ! -f "/etc/ssh/ssh_host_rsa_key" ] || \
-    [ ! -f "/etc/ssh/ssh_host_ecdsa_key" ] || \
-    [ ! -f "/etc/ssh/ssh_host_ed25519_key" ]; then
-    echo "Generating SSH host keys"
-    ssh-keygen -A
-fi
-
-# If PORT specified, replace it in sshd_config
-if [ -n "$PORT" ]; then
-    echo "PORT = $PORT"
-    sed -i -E "s/[[:space:]]*#?[[:space:]]*Port[[:space:]]*[[:digit:]]+[[:space:]]*/Port $PORT/g" /etc/ssh/sshd_config
+# Create user if not exists
+if ! id -u "$USER_NAME" >/dev/null 2>&1; then
+    echo "Creating user $USER_NAME with UID $PUID and GID $PGID"
+    groupadd -g "$PGID" "$USER_NAME"
+    useradd -u "$PUID" -g "$PGID" -d /config -s /bin/bash "$USER_NAME"
+    echo "$USER_NAME:$USER_PASSWORD" | chpasswd
 else
-    echo "No PORT specified, using default port in /etc/ssh/sshd_config"
+    echo "User $USER_NAME already exists, skipping creation"
 fi
 
-# if PASSWORD_AUTHENTICATION is set
-if [ "$PASSWORD_AUTHENTICATION" = "yes" ]; then
-    echo "Enabling password authentication"
-    sed -i -E "s/[[:space:]]*#?[[:space:]]*PasswordAuthentication[[:space:]]*[[:alpha:]]+[[:space:]]*/PasswordAuthentication yes/g" /etc/ssh/sshd_config
+# Modify sshd configuration to use the port specified by SSHD_PORT environment variable
+if grep -q "^#*Port " /etc/ssh/sshd_config; then
+    sed -i "s/^#*Port .*/Port $SSHD_PORT/" /etc/ssh/sshd_config
 else
-    echo "Disabling password authentication"
-    sed -i -E "s/[[:space:]]*#?[[:space:]]*PasswordAuthentication[[:space:]]*[[:alpha:]]+[[:space:]]*/PasswordAuthentication no/g" /etc/ssh/sshd_config
+    echo "Port $SSHD_PORT" >> /etc/ssh/sshd_config
 fi
 
-mkdir -p /run/sshd
+# Enable password authentication and public key authentication in sshd_config
+sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+sed -i 's/^#*PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_config
 
-exec "$@"
+# Generate sshd host keys if they do not exist
+for key_type in rsa dsa ecdsa ed25519; do
+    key_file="/etc/ssh/ssh_host_${key_type}_key"
+    if [ ! -f "$key_file" ]; then
+        echo "Generating $key_type sshd host key..."
+        ssh-keygen -t "$key_type" -f "$key_file" -N ""
+    else
+        echo "$key_type sshd host key already exists, skipping generation"
+    fi
+done
+
+# Set the timezone
+if [ -n "$TZ" ]; then
+    echo "Setting timezone to $TZ"
+    ln -sf "/usr/share/zoneinfo/$TZ" /etc/localtime
+    dpkg-reconfigure -f noninteractive tzdata
+else
+    echo "No timezone specified, using default system timezone"
+fi
+
+# Start sshd service
+exec /usr/sbin/sshd -D

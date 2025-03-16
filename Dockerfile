@@ -1,22 +1,21 @@
-FROM docker.io/library/debian:12
-
-ENV PORT 2222
-ENV PASSWORD_AUTHENTICATION no
+FROM docker.io/library/debian:stable
 
 ARG DEBIAN_FRONTEND=noninteractive
+
+COPY init.sh /init.sh
 
 RUN apt-get update && \
     apt-get install -y \
     openssh-server \
-    openssh-client \
-    ca-certificates \
+    tzdata \
+    vim \
     curl \
-    vim && \
-    apt-get clean && \
-    rm -f /etc/ssh/ssh_host_*
+    wget \
+    net-tools \
+    iputils-ping && \
+    rm -rf /var/lib/apt/lists/* && \
+    chmod +x /init.sh
 
-COPY init.sh /init.sh
+VOLUME [ "/etc/ssh" ]
 
-ENTRYPOINT ["/init.sh"]
-
-CMD [ "/usr/sbin/sshd", "-D" ]
+CMD ["/init.sh"]

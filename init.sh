@@ -40,6 +40,15 @@ for key_type in rsa dsa ecdsa ed25519; do
     fi
 done
 
+# Ensure /run/sshd exists and has the correct permissions
+if [ ! -d "/run/sshd" ]; then
+    mkdir -p /run/sshd
+    echo "/run/sshd directory created"
+fi
+chown root:root /run/sshd
+chmod 0755 /run/sshd
+echo "/run/sshd ownership set to root:root and permissions set to 0755"
+
 # Set the timezone
 if [ -n "$TZ" ]; then
     echo "Setting timezone to $TZ"
